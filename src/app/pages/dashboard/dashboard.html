@@ -1,0 +1,171 @@
+<div class="min-h-screen bg-gray-100">
+    <header class="bg-blue-600 text-white px-8 py-4 flex justify-between items-center">
+        <h1 class="text-2xl font-semibold m-0">Leaves Management Dashboard</h1>
+        <div class="flex items-center gap-4">
+            <span>Welcome, {{ currentUser()?.name }}</span>
+            <span class="bg-opacity-20 px-2 py-1 rounded text-xs font-semibold"
+                [ngClass]="currentUser()?.isManager ? 'bg-orange-500 ' : 'bg-lime-500'">
+                {{ currentUser()?.isManager ? 'Manager' : 'Employee' }}
+            </span>
+            <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer border-none"
+                (click)="logout()">
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <nav class="bg-white border-b border-gray-300 flex px-8">
+        <button
+            class="py-4 px-6 cursor-pointer border-0 bg-transparent border-b-4 border-transparent transition-all duration-300 hover:bg-gray-100"
+            [class]="activeTab() === 'my-leaves' ? 'border-b-blue-600 text-blue-600 font-semibold' : ''"
+            (click)="setActiveTab('my-leaves')">
+            My Leaves
+        </button>
+        <button
+            class="py-4 px-6 cursor-pointer border-0 bg-transparent border-b-4 border-transparent transition-all duration-300 hover:bg-gray-100"
+            [class]="activeTab() === 'new-leave' ? 'border-b-blue-600 text-blue-600 font-semibold' : ''"
+            (click)="setActiveTab('new-leave')">
+            Request Leave
+        </button>
+        @if (currentUser()?.isManager) {
+        <button
+            class="py-4 px-6 cursor-pointer border-0 bg-transparent border-b-4 border-transparent transition-all duration-300 hover:bg-gray-100"
+            [class]="activeTab() === 'approvals' ? 'border-b-blue-600 text-blue-600 font-semibold' : ''"
+            (click)="setActiveTab('approvals')">
+            Pending Approvals
+        </button>
+        }
+    </nav>
+
+    <main class="p-8">
+        <!-- My Leaves Tab -->
+        @if (activeTab() === 'my-leaves') {
+        <div class="space-y-8">
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h2 class="text-xl font-semibold mb-4">Leave Balance</h2>
+                @if (leaveBalance()) {
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex justify-between p-2 bg-gray-100 rounded">
+                        <span class="font-medium">Remaining Days:</span>
+                        <span class="font-semibold text-blue-600">
+                            {{ leaveBalance()?.remainingLeaveDays }} / {{ leaveBalance()?.totalLeaveDays }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between p-2 bg-gray-100 rounded">
+                        <span class="font-medium">Remaining Hours:</span>
+                        <span class="font-semibold text-blue-600">
+                            {{ leaveBalance()?.remainingLeaveHours }} / {{ leaveBalance()?.totalLeaveHours }}
+                        </span>
+                    </div>
+                </div>
+                }
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h2 class="text-xl font-semibold mb-4">My Leave Requests</h2>
+                @if (myLeaves().length === 0) {
+                <div class="text-center text-gray-500 py-8 italic">
+                    No leave requests found.
+                </div>
+                }
+                @for (leave of myLeaves(); track leave.leaveId) {
+                <div class="border border-gray-300 rounded-lg p-4 mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium m-0">{{ leave.leaveLabel }}</h3>
+                        <span class="px-3 py-1 rounded text-xs font-semibold uppercase" [ngClass]="{
+                            'bg-yellow-100 text-yellow-800': leave.status.toLowerCase() === 'requested',
+                            'bg-green-100 text-green-800': leave.status.toLowerCase() === 'approved',
+                            'bg-red-100 text-red-800': leave.status.toLowerCase() === 'closed'
+                          }">
+                            {{ leave.status }}
+                        </span>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="my-2">
+                            <strong>Period:</strong> {{ formatDate(leave.startOfLeave) }} -
+                            {{ formatDate(leave.endOfLeave) }}
+                        </p>
+                        <p class="my-2">
+                            <strong>Duration:</strong> {{ leave.totalDays }} days ({{ leave.totalHours }}
+                            hours)
+                        </p>
+                        @if (leave.isSpecialLeave) {
+                        <p class="my-2">
+                            <strong>Type:</strong> Special Leave - {{ leave.specialLeaveType }}
+                        </p>
+                        }
+                        @if (leave.approverId) {
+                        <p class="my-2">
+                            <strong>Approved by:</strong> {{ leave.approverId }}
+                        </p>
+                        }
+                    </div>
+                    @if (canDeleteLeave(leave)) {
+                    <div class="mt-4 flex gap-2">
+                        <button
+                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer border-none"
+                            (click)="deleteLeave(leave.leaveId)">
+                            Cancel Request
+                        </button>
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+        </div>
+        }
+
+        <!-- New Leave Tab -->
+        @if (activeTab() === 'new-leave') {
+        <div>
+            <leave-form (leaveCreated)="onLeaveCreated($event)"></leave-form>
+        </div>
+        }
+
+        <!-- Approvals Tab -->
+        @if (activeTab() === 'approvals' && currentUser()?.isManager) {
+        <div class="bg-white p-6 rounded-lg shadow-sm">
+            <h2 class="text-xl font-semibold mb-4">Pending Leave Approvals</h2>
+            @if (pendingApprovals().length === 0) {
+            <div class="text-center text-gray-500 py-8 italic">
+                No pending approvals.
+            </div>
+            }
+            @for (leave of pendingApprovals(); track leave.leaveId) {
+            <div class="border border-gray-300 rounded-lg p-4 mb-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium m-0">{{ leave.leaveLabel }}</h3>
+                    <span class="text-gray-600 text-sm">{{ leave.employeeId }}</span>
+                </div>
+                <div class="space-y-2">
+                    <p class="my-2">
+                        <strong>Period:</strong> {{ formatDate(leave.startOfLeave) }} -
+                        {{ formatDate(leave.endOfLeave) }}
+                    </p>
+                    <p class="my-2">
+                        <strong>Duration:</strong> {{ leave.totalDays }} days ({{ leave.totalHours }}
+                        hours)
+                    </p>
+                    @if (leave.isSpecialLeave) {
+                    <p class="my-2">
+                        <strong>Type:</strong> Special Leave - {{ leave.specialLeaveType }}
+                    </p>
+                    }
+                </div>
+                <div class="mt-4 flex gap-2">
+                    <button
+                        class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded cursor-pointer border-none"
+                        (click)="approveLeave(leave.leaveId, true)">
+                        Approve
+                    </button>
+                    <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer border-none"
+                        (click)="approveLeave(leave.leaveId, false)">
+                        Reject
+                    </button>
+                </div>
+            </div>
+            }
+        </div>
+        }
+    </main>
+</div>

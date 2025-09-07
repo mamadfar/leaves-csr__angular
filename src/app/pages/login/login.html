@@ -1,0 +1,62 @@
+<div class="flex justify-center items-center min-h-screen bg-gray-100 p-5">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 class="text-center text-blue-700 text-2xl font-bold mb-2">KLM Leaves Management</h1>
+        <h2 class="text-center text-gray-600 text-lg mb-8 font-normal">Employee Login</h2>
+
+        <form (ngSubmit)="login()" #loginForm="ngForm" class="space-y-4">
+            <div class="space-y-2">
+                <label for="employeeId" class="block font-medium">Employee ID:</label>
+                <input type="text" id="employeeId" name="employeeId" [(ngModel)]="employeeId" placeholder="K123456"
+                    pattern="^K[0-9]{6}$" required #empIdInput="ngModel"
+                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-700" />
+                @if (empIdInput.invalid && empIdInput.touched) {
+                <div class="text-red-600 text-sm">
+                    Please enter a valid employee ID (format: K123456)
+                </div>
+                }
+            </div>
+
+            <button type="submit" [disabled]="!loginForm.valid || isLoading()"
+                class="w-full py-3 bg-blue-700 hover:bg-blue-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white border-none rounded font-medium cursor-pointer transition-colors duration-300">
+                {{ isLoading() ? 'Logging in...' : 'Login' }}
+            </button>
+
+            @if (errorMessage()) {
+            <div class="text-red-600 text-sm">
+                {{ errorMessage() }}
+            </div>
+            }
+        </form>
+
+        <div class="mt-8 pt-4 border-t border-gray-200">
+            <h3 class="mb-4 text-gray-600 font-medium">Demo Users:</h3>
+            <div class="flex flex-col gap-2">
+                <button
+                    class="p-2 bg-gray-100 text-gray-800 border border-gray-300 text-sm rounded cursor-pointer hover:bg-gray-200 transition-colors duration-200"
+                    (click)="quickLogin('K012345')">
+                    K012345 - Mohammad Farhadi (Employee)
+                </button>
+                <button
+                    class="p-2 bg-gray-100 text-gray-800 border border-gray-300 text-sm rounded cursor-pointer hover:bg-gray-200 transition-colors duration-200"
+                    (click)="quickLogin('K012346')">
+                    K012346 - Bertold Oravecz (Employee)
+                </button>
+                <button
+                    class="p-2 bg-gray-100 text-gray-800 border border-gray-300 text-sm rounded cursor-pointer hover:bg-gray-200 transition-colors duration-200"
+                    (click)="quickLogin('K012347')">
+                    K012347 - Carol Davis (Employee)
+                </button>
+                <button
+                    class="p-2 bg-gray-100 text-gray-800 border border-gray-300 text-sm rounded cursor-pointer hover:bg-gray-200 transition-colors duration-200"
+                    (click)="quickLogin('K000001')">
+                    K000001 - Velthoven Jeroen-van (Manager)
+                </button>
+                <button
+                    class="p-2 bg-gray-100 text-gray-800 border border-gray-300 text-sm rounded cursor-pointer hover:bg-gray-200 transition-colors duration-200"
+                    (click)="quickLogin('K000002')">
+                    K000002 - Eszter Nasz (Manager)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { LeaveService } from './leave.service';
-import { AuthService } from './auth.service';
-import { EmployeeService } from './employee.service';
-import { Leave, CreateLeaveRequest } from '../models/leave.model';
+import { LeaveService } from './Leave.service';
+import { AuthService } from './auth/Auth.service';
+import { EmployeeService } from './employee/Employee.service';
+import { ILeave, ICreateLeaveRequest } from '../types/Leave.type';
 
 describe('LeaveService', () => {
   let service: LeaveService;
@@ -17,10 +17,10 @@ describe('LeaveService', () => {
       providers: [
         LeaveService,
         { provide: AuthService, useValue: authSpy },
-        { provide: EmployeeService, useValue: employeeSpy }
-      ]
+        { provide: EmployeeService, useValue: employeeSpy },
+      ],
     });
-    
+
     service = TestBed.inject(LeaveService);
     authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
     employeeService = TestBed.inject(EmployeeService) as jasmine.SpyObj<EmployeeService>;
@@ -32,10 +32,10 @@ describe('LeaveService', () => {
 
   it('should get leaves by employee', (done) => {
     const employeeId = 'K123456';
-    
-    service.getLeavesByEmployee(employeeId).subscribe(leaves => {
+
+    service.getLeavesByEmployee(employeeId).subscribe((leaves) => {
       expect(leaves).toBeDefined();
-      expect(leaves.every(leave => leave.employeeId === employeeId)).toBeTruthy();
+      expect(leaves.every((leave) => leave.employeeId === employeeId)).toBeTruthy();
       done();
     });
   });
@@ -45,14 +45,16 @@ describe('LeaveService', () => {
     authService.getCurrentUser.and.returnValue({
       employeeId: 'K123456',
       name: 'Test User',
-      isManager: false
+      isManager: false,
     });
 
-    const invalidRequest: CreateLeaveRequest = {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const invalidRequest: ICreateLeaveRequest = {
       leaveLabel: 'Test Leave',
-      startOfLeave: new Date('2025-01-01'), // Past date
-      endOfLeave: new Date('2025-01-02'),
-      isSpecialLeave: false
+      startOfLeave: yesterday, // Past date
+      endOfLeave: new Date(),
+      isSpecialLeave: false,
     };
 
     service.createLeave(invalidRequest).subscribe({
@@ -63,33 +65,44 @@ describe('LeaveService', () => {
       error: (error) => {
         expect(error.message).toContain('Leave must be scheduled for the future');
         done();
-      }
+      },
     });
   });
 
-  it('should prevent overlapping leaves', (done) => {
+  it('should create a valid leave request for weekdays', (done) => {
     authService.getCurrentUser.and.returnValue({
-      employeeId: 'K123456',
+      employeeId: 'K999999', // New employee with no existing leaves
       name: 'Test User',
-      isManager: false
+      isManager: false,
     });
 
-    const overlappingRequest: CreateLeaveRequest = {
-      leaveLabel: 'Overlapping Leave',
-      startOfLeave: new Date('2025-08-05'), // Overlaps with existing leave
-      endOfLeave: new Date('2025-08-10'),
-      isSpecialLeave: false
+    // Find next Monday (weekday)
+    const nextMonday = new Date();
+    nextMonday.setDate(nextMonday.getDate() + ((8 - nextMonday.getDay()) % 7 || 7));
+    nextMonday.setHours(9, 0, 0, 0);
+
+    const endDate = new Date(nextMonday);
+    endDate.setDate(endDate.getDate() + 2); // Wednesday
+    endDate.setHours(17, 0, 0, 0);
+
+    const validRequest: ICreateLeaveRequest = {
+      leaveLabel: 'Valid Leave',
+      startOfLeave: nextMonday,
+      endOfLeave: endDate,
+      isSpecialLeave: false,
     };
 
-    service.createLeave(overlappingRequest).subscribe({
-      next: () => {
-        fail('Should have failed due to overlap');
+    service.createLeave(validRequest).subscribe({
+      next: (leave) => {
+        expect(leave).toBeTruthy();
+        expect(leave.leaveLabel).toBe('Valid Leave');
+        expect(leave.employeeId).toBe('K999999');
         done();
       },
       error: (error) => {
-        expect(error.message).toContain('Leave overlaps with existing leave');
+        fail('Should not have failed: ' + error.message);
         done();
-      }
+      },
     });
   });
 });

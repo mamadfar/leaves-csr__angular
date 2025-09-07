@@ -1,11 +1,11 @@
-export interface User {
+export interface IUser {
   employeeId: string;
   name: string;
   isManager: boolean;
   managerId?: string;
 }
 
-export interface AuthState {
+export interface IAuthState {
   isAuthenticated: boolean;
-  user: User | null;
+  user: IUser | null;
 }

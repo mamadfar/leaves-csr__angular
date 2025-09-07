@@ -1,0 +1,128 @@
+<div class="bg-white p-8 rounded-lg shadow-sm max-w-2xl">
+    <h2 class="text-xl font-semibold mb-6">Request New Leave</h2>
+
+    <form (ngSubmit)="submitLeave()" #leaveForm="ngForm" class="space-y-6">
+        <div class="space-y-2">
+            <label for="leaveLabel" class="block font-medium">Leave Description:</label>
+            <input type="text" id="leaveLabel" name="leaveLabel" [(ngModel)]="leaveRequest.leaveLabel"
+                placeholder="e.g., Summer vacation, Doctor appointment" required #labelInput="ngModel"
+                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-700" />
+            @if (labelInput.invalid && labelInput.touched) {
+            <div class="text-red-600 text-sm">Leave description is required</div>
+            }
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+                <label for="startDate" class="block font-medium">Start Date:</label>
+                <input type="date" id="startDate" name="startDate"
+                    [ngModel]="formatDateForInput(leaveRequest.startOfLeave)" (ngModelChange)="updateStartDate($event)"
+                    required #startInput="ngModel"
+                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-700" />
+            </div>
+
+            <div class="space-y-2">
+                <label for="startTime" class="block font-medium">Start Time:</label>
+                <input type="time" id="startTime" name="startTime"
+                    [ngModel]="formatTimeForInput(leaveRequest.startOfLeave)" (ngModelChange)="updateStartTime($event)"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-700" />
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+                <label for="endDate" class="block font-medium">End Date:</label>
+                <input type="date" id="endDate" name="endDate" [ngModel]="formatDateForInput(leaveRequest.endOfLeave)"
+                    (ngModelChange)="updateEndDate($event)" required #endInput="ngModel"
+                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-700" />
+            </div>
+
+            <div class="space-y-2">
+                <label for="endTime" class="block font-medium">End Time:</label>
+                <input type="time" id="endTime" name="endTime" [ngModel]="formatTimeForInput(leaveRequest.endOfLeave)"
+                    (ngModelChange)="updateEndTime($event)" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-700" />
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <input type="checkbox" id="isSpecialLeave" [(ngModel)]="leaveRequest.isSpecialLeave" name="isSpecialLeave"
+                class="w-4 h-4" />
+            <label for="isSpecialLeave" class="font-medium">This is a special leave</label>
+        </div>
+
+        @if (leaveRequest.isSpecialLeave) {
+        <div class="space-y-2">
+            <label for="specialType" class="block font-medium">Special Leave Type:</label>
+            <select id="specialType" name="specialType" [(ngModel)]="leaveRequest.specialLeaveType" required
+                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-700">
+                <option value="">Select special leave type</option>
+                <option value="MOVING">Moving to new house</option>
+                <option value="WEDDING">Wedding/Partner registration</option>
+                <option value="CHILD_BIRTH">Birth of a child</option>
+                <option value="PARENTAL_CARE">Parental care</option>
+            </select>
+        </div>
+        }
+
+        <div class="flex gap-4 pt-4">
+            <button type="submit" [disabled]="!leaveForm.valid || isSubmitting()"
+                class="bg-blue-700 hover:bg-blue-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded font-medium cursor-pointer border-none">
+                {{ isSubmitting() ? 'Submitting...' : 'Submit Request' }}
+            </button>
+            <button type="button" (click)="resetForm()"
+                class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded font-medium cursor-pointer border-none">
+                Reset
+            </button>
+        </div>
+
+        @if (errorMessage()) {
+        <div class="text-red-600 text-sm">
+            {{ errorMessage() }}
+        </div>
+        } @if (successMessage()) {
+        <div class="text-green-600 text-sm">
+            {{ successMessage() }}
+        </div>
+        }
+    </form>
+
+    <div class="mt-8 p-4 bg-gray-50 rounded">
+        <h3 class="mt-0 text-gray-600 text-lg font-medium mb-4">Important Information</h3>
+        @if (!leaveRequest.isSpecialLeave) {
+        <div>
+            <h4 class="text-gray-700 font-medium mb-2">Regular Leave Rules:</h4>
+            <ul class="m-0 pl-6 text-gray-600">
+                <li class="mb-2">Leave requests must be submitted in advance</li>
+                <li class="mb-2">Leaves cannot overlap with existing approved leaves</li>
+                <li class="mb-2">Must be scheduled during working hours (9:00-17:00)</li>
+                <li class="mb-2">Cannot be scheduled on weekends or public holidays</li>
+                <li class="mb-2">All leave requests require manager approval</li>
+                <li class="mb-2">You can cancel pending requests before the start date</li>
+            </ul>
+        </div>
+        } @else {
+        <div>
+            <h4 class="text-gray-700 font-medium mb-2">Special Leave Rules:</h4>
+            <ul class="m-0 pl-6 text-gray-600">
+                <li class="mb-2"><strong>Must be requested 2 weeks in advance</strong></li>
+                <li class="mb-2">Does not reduce your regular leave balance</li>
+                <li class="mb-2">Same working hours and scheduling rules as regular leave</li>
+                <li class="mb-2">Limited quantities per year/lifetime</li>
+                <li class="mb-2">Requires manager approval</li>
+            </ul>
+
+            <div class="mt-4 p-4 bg-blue-50 rounded border-l-4 border-blue-600">
+                <h4 class="mt-0 text-blue-600 font-medium mb-2">Special Leave Limits:</h4>
+                <ul class="m-0 pl-6 text-gray-700">
+                    <li class="mb-2"><strong>Moving:</strong> 1 day per year</li>
+                    <li class="mb-2"><strong>Wedding/Partnership:</strong> 1 day (lifetime)</li>
+                    <li class="mb-2"><strong>Child Birth:</strong> Maximum 5 days total</li>
+                    <li class="mb-2"><strong>Parental Care:</strong> Maximum 10x your contract hours</li>
+                </ul>
+            </div>
+        </div>
+        }
+    </div>
+</div>
