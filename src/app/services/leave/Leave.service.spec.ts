@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { LeaveService } from './Leave.service';
-import { AuthService } from './auth/Auth.service';
-import { EmployeeService } from './employee/Employee.service';
-import { ILeave, ICreateLeaveRequest } from '../types/Leave.type';
+import { AuthService } from '$services/auth/Auth.service';
+import { EmployeeService } from '$services/employee/Employee.service';
+import { ILeave, ICreateLeaveRequest } from '$types/Leave.type';
 
 describe('LeaveService', () => {
   let service: LeaveService;
@@ -15,6 +16,7 @@ describe('LeaveService', () => {
 
     TestBed.configureTestingModule({
       providers: [
+        provideZonelessChangeDetection(),
         LeaveService,
         { provide: AuthService, useValue: authSpy },
         { provide: EmployeeService, useValue: employeeSpy },
